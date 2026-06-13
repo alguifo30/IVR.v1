@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Banco Lima · IVR Chat Apple Preview</title>
+<style>
+:root{
+  --bg:#f5f5f7;--surface:rgba(255,255,255,.78);--white:#fff;--text:#1d1d1f;--muted:#6e6e73;
+  --line:rgba(0,0,0,.08);--blue:#007aff;--green:#34c759;--red:#ff3b30;--orange:#ff9500;--purple:#af52de;
+  --blueSoft:#e8f2ff;--greenSoft:#eaf8ef;--redSoft:#fff0ee;--orangeSoft:#fff4e4;--purpleSoft:#f7ecff;
+  --shadow:0 24px 80px rgba(0,0,0,.10);--soft:0 8px 24px rgba(0,0,0,.06)
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 20% 0%,rgba(0,122,255,.12),transparent 30%),radial-gradient(circle at 90% 12%,rgba(52,199,89,.12),transparent 26%),var(--bg);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",system-ui,sans-serif;color:var(--text)}
+.shell{min-height:100vh;padding:28px}
+.layout{width:min(1180px,100%);min-height:760px;margin:0 auto;display:grid;grid-template-columns:330px minmax(0,1fr);gap:20px}
+.glass{background:var(--surface);border:1px solid rgba(255,255,255,.75);box-shadow:var(--shadow);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px)}
+.sidebar,.phone{border-radius:34px;overflow:hidden}
+.sidebar{display:flex;flex-direction:column}
+.brand{padding:26px 24px 20px;border-bottom:1px solid var(--line)}
+.logoRow{display:flex;gap:12px;align-items:center;margin-bottom:16px}
+.logo{width:46px;height:46px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(145deg,#007aff,#34c759);color:white;font-weight:900;box-shadow:0 10px 24px rgba(0,122,255,.22)}
+h1{margin:0;font-size:22px;letter-spacing:-.03em;line-height:1.05}
+.brand p{margin:8px 0 0;color:var(--muted);font-size:13px;line-height:1.45}
+.panel{padding:18px 20px;border-bottom:1px solid var(--line)}
+.panelTitle{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:750;margin-bottom:10px}
+.chips{display:flex;gap:7px;flex-wrap:wrap}
+.chip{border-radius:999px;padding:7px 10px;background:rgba(255,255,255,.92);border:1px solid var(--line);font-size:12px;font-weight:650;color:#424245}
+.chip.green{background:var(--greenSoft);color:#1b7f37}.chip.red{background:var(--redSoft);color:#b42318}.chip.orange{background:var(--orangeSoft);color:#9a5b00}.chip.blue{background:var(--blueSoft);color:#0057b8}.chip.purple{background:var(--purpleSoft);color:#7b2cbf}
+select{width:100%;border:1px solid var(--line);background:rgba(255,255,255,.86);border-radius:14px;padding:12px;color:var(--text);outline:none;font-size:13px;margin-bottom:10px}
+.profile{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+button{font-family:inherit}
+.smallBtn{border:1px solid var(--line);background:rgba(255,255,255,.86);border-radius:14px;padding:11px 10px;font-size:12px;font-weight:750;cursor:pointer;transition:.16s}
+.smallBtn:hover,.option:hover{transform:translateY(-1px);box-shadow:var(--soft)}
+.smallBtn.active{background:var(--text);color:#fff;border-color:transparent}
+.smallBtn.primary{background:var(--blue);color:#fff;border-color:transparent}.smallBtn.danger{background:var(--red);color:#fff;border-color:transparent}
+.info{display:grid;gap:10px;padding:18px 20px;flex:1;overflow:auto}
+.card{background:rgba(255,255,255,.72);border:1px solid rgba(0,0,0,.06);border-radius:20px;padding:15px}
+.card h3{margin:0 0 7px;font-size:13px}.card p,.card li{margin:0;color:var(--muted);font-size:12.5px;line-height:1.48}.card ul{margin:8px 0 0;padding-left:18px}
+.actions{padding:18px 20px 22px;border-top:1px solid var(--line);display:grid;gap:9px}
+.phone{display:flex;flex-direction:column;background:rgba(255,255,255,.78)}
+.top{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:14px}
+.agent{display:flex;gap:12px;align-items:center;min-width:0}.agentIcon{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#111;color:#fff;box-shadow:var(--soft);font-weight:850;font-size:12px}.agent strong{display:block;font-size:15px}.agent span{display:block;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topActions{display:flex;gap:8px;align-items:center}.iconBtn{border:0;border-radius:999px;height:38px;padding:0 12px;background:rgba(0,0,0,.05);font-size:12px;font-weight:750;cursor:pointer}.iconBtn.active{background:var(--green);color:white}
+.progress{height:5px;background:rgba(0,0,0,.06);overflow:hidden}.bar{height:100%;width:0%;background:linear-gradient(90deg,var(--green),var(--blue));transition:width .28s ease}
+.messages{flex:1;overflow:auto;padding:28px;display:flex;flex-direction:column;gap:14px;scroll-behavior:smooth}
+.msg{width:min(78%,660px);display:flex;gap:10px;align-items:flex-end;animation:rise .18s ease-out}@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}.avatar{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto;font-size:12px;font-weight:850;background:rgba(0,0,0,.08)}.msg.user .avatar{background:var(--blue);color:#fff}
+.bubble{border-radius:24px;padding:15px 16px;background:#fff;border:1px solid rgba(0,0,0,.05);box-shadow:0 8px 22px rgba(0,0,0,.045);font-size:14px;line-height:1.48;letter-spacing:-.01em}.msg.user .bubble{background:var(--blue);color:#fff;border-color:transparent}
+.bubbleHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}.badge{border-radius:999px;padding:5px 8px;font-size:10px;font-weight:850;letter-spacing:.05em;text-transform:uppercase}
+.badge.menu{background:var(--blueSoft);color:#0057b8}.badge.auth{background:var(--orangeSoft);color:#9a5b00}.badge.block{background:var(--redSoft);color:#b42318}.badge.wa{background:var(--greenSoft);color:#1b7f37}.badge.help{background:var(--purpleSoft);color:#7b2cbf}.badge.audio{background:rgba(0,0,0,.05);color:#424245}
+.speaker{border:0;min-width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.055);cursor:pointer}.speaker:hover{background:rgba(0,0,0,.09)}
+.optionsArea{padding:16px 22px 20px;border-top:1px solid var(--line);background:rgba(250,250,250,.72)}
+.options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px}
+.option{min-height:58px;border:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.86);border-radius:18px;padding:13px 14px;text-align:left;display:flex;gap:11px;cursor:pointer;transition:.16s;color:var(--text)}
+.option.danger{background:var(--redSoft);border-color:rgba(255,59,48,.16)}.option.green{background:var(--greenSoft);border-color:rgba(52,199,89,.16)}.option.orange{background:var(--orangeSoft);border-color:rgba(255,149,0,.16)}.option.purple{background:var(--purpleSoft);border-color:rgba(175,82,222,.16)}
+.key{min-width:28px;height:28px;border-radius:10px;display:grid;place-items:center;background:rgba(0,0,0,.08);font-weight:850;font-size:12px}.ot strong{display:block;font-size:13.5px;line-height:1.2}.ot span{display:block;margin-top:3px;color:var(--muted);font-size:11.5px;line-height:1.25}
+.inputRow{display:flex;gap:9px}.inputRow input{flex:1;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);border-radius:18px;padding:14px 15px;outline:none;font-size:14px}.inputRow input:focus{border-color:rgba(0,122,255,.45);box-shadow:0 0 0 4px rgba(0,122,255,.10)}
+.send{border:0;border-radius:18px;background:var(--text);color:#fff;padding:0 18px;font-weight:800;cursor:pointer}.hint{color:var(--muted);font-size:12px;margin-top:8px}
+@media(max-width:940px){.shell{padding:14px}.layout{grid-template-columns:1fr}.sidebar{order:2}.phone{min-height:720px}.options{grid-template-columns:1fr}.msg{width:min(92%,680px)}.topActions{flex-wrap:wrap;justify-content:flex-end}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="layout">
+    <aside class="sidebar glass">
+      <section class="brand">
+        <div class="logoRow">
+          <div class="logo">BL</div>
+          <div><h1>IVR Chat</h1><p>Banco Lima · prototipo conversacional</p></div>
+        </div>
+        <p>Experiencia minimalista para revisar audios, autenticación y continuidad por WhatsApp.</p>
+      </section>
+
+      <section class="panel">
+        <div class="panelTitle">Estado actual</div>
+        <div id="chips" class="chips"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panelTitle">Voz</div>
+        <select id="voiceSelect" onchange="selectedVoiceName=this.value"></select>
+        <div class="profile">
+          <button id="naturalBtn" class="smallBtn active" onclick="setProfile('natural')">Natural femenina</button>
+          <button id="formalBtn" class="smallBtn" onclick="setProfile('formal')">Formal IVR</button>
+        </div>
+      </section>
+
+      <div class="info">
+        <div class="card"><h3>Reglas del flujo</h3><p>Bloqueo usa solo documento: DNI o Carné de Extranjería numérico. Consultas usa validación adaptativa: si el celular no coincide, pide fecha de nacimiento.</p></div>
+        <div class="card"><h3>DNIs de prueba</h3><ul><li><b>12345678</b>: celular reconocido.</li><li><b>87654321</b>: celular no reconocido.</li><li><b>99999999</b>: documento no validado.</li><li><b>001234567</b>: CE reconocido.</li><li><b>009876543</b>: CE no reconocido.</li></ul></div>
+        <div class="card"><h3>Voz Perú / LatAm</h3><p>El selector prioriza español Perú o Latinoamérica y voces femeninas si el navegador las tiene disponibles.</p></div>
+      </div>
+
+      <section class="actions">
+        <button class="smallBtn primary" onclick="restart()">Reiniciar simulación</button>
+        <button class="smallBtn" onclick="quickCase('recognized')">Probar DNI reconocido</button>
+        <button class="smallBtn" onclick="quickCase('not')">Probar DNI no reconocido</button>
+        <button class="smallBtn danger" onclick="quickCase('block')">Probar bloqueo</button>
+      </section>
+    </aside>
+
+    <main class="phone glass">
+      <header class="top">
+        <div class="agent"><div class="agentIcon">BL</div><div><strong>Asistente de Banca Telefónica</strong><span id="nodeLabel">Menú inicial</span></div></div>
+        <div class="topActions">
+          <button id="autoBtn" class="iconBtn" onclick="toggleAuto()">Auto audio OFF</button>
+          <button class="iconBtn" onclick="stopAudio()">Detener</button>
+        </div>
+      </header>
+      <div class="progress"><div id="bar" class="bar"></div></div>
+      <section id="messages" class="messages"></section>
+      <section class="optionsArea">
+        <div id="options" class="options"></div>
+        <div id="inputRow" class="inputRow" style="display:none"><input id="textInput" /><button class="send" onclick="submitInput()">Enviar</button></div>
+        <div id="hint" class="hint"></div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+const clients={ "12345678":{name:"Alfredo",phone:"recognized",dob:"12051988"}, "87654321":{name:"Mariana",phone:"not",dob:"23071990"}, "001234567":{name:"Carlos",phone:"recognized",dob:"05061985"}, "009876543":{name:"Lucía",phone:"not",dob:"14021992"} };
+let ctx={}, autoAudio=false, selectedVoiceName="", profile="natural", lastVoiceId=0;
+const $=id=>document.getElementById(id);
+function cap(s){return s?String(s).charAt(0).toUpperCase()+String(s).slice(1):"cliente"}
+function setState(p){ctx={...ctx,...p}; renderState()}
+function renderState(){
+  $("nodeLabel").textContent=ctx.node||"Menú inicial"; $("bar").style.width=(ctx.progress||0)+"%";
+  let chips=ctx.route==="block"?[["Ruta crítica","red"],["Solo documento","orange"],["Sin celular / sin fecha","green"]]:ctx.route==="consult"?[["Consulta","blue"],[ctx.phone==="recognized"?"Celular reconocido":"Autenticación adaptativa",ctx.phone==="recognized"?"green":"orange"]]:[["Menú inicial","blue"],["2 opciones",""]];
+  $("chips").innerHTML=chips.map(c=>`<span class="chip ${c[1]}">${c[0]}</span>`).join("");
+}
+function badgeLabel(t){return {menu:"Menú",auth:"Autenticación",block:"Bloqueo",wa:"WhatsApp",help:"Ayuda",audio:"Audio IVR"}[t]||"Audio IVR"}
+function addMsg(text,who="bot",type="audio"){
+  const el=document.createElement("div"); el.className="msg "+(who==="user"?"user":"bot");
+  let safe=text.replace(/\n/g,"<br>");
+  if(who==="bot"){
+    const id=++lastVoiceId;
+    el.innerHTML=`<div class="avatar">BL</div><div class="bubble"><div class="bubbleHead"><span class="badge ${type}">${badgeLabel(type)}</span><button class="speaker" onclick="speak(document.getElementById('v${id}').dataset.text)">🔊</button></div><div id="v${id}" data-text="${escapeAttr(text)}">${safe}</div></div>`;
+    if(autoAudio)setTimeout(()=>speak(text),200);
+  }else el.innerHTML=`<div class="avatar">Tú</div><div class="bubble">${safe}</div>`;
+  $("messages").appendChild(el); $("messages").scrollTop=$("messages").scrollHeight;
+}
+function escapeAttr(s){return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function setOptions(opts){$("options").innerHTML=opts.map((o,i)=>`<button class="option ${o.tone||""}" onclick="${o.action}"><span class="key">${o.key}</span><span class="ot"><strong>${o.title}</strong>${o.desc?`<span>${o.desc}</span>`:""}</span></button>`).join("")}
+function setInput(show,placeholder="",hint=""){ $("inputRow").style.display=show?"flex":"none"; $("textInput").placeholder=placeholder; $("hint").textContent=hint; if(show)setTimeout(()=>$("textInput").focus(),80)}
+function choose(label,fn){addMsg(label,"user"); fn()}
+function restart(){stopAudio(); ctx={route:null,node:"Menú inicial",progress:0,expected:null,attempts:0}; $("messages").innerHTML=""; renderState(); setOptions([{key:"0",title:"Bloqueo inmediato",desc:"Tarjeta o accesos",tone:"danger",action:"choose('0 · Bloqueo inmediato',routeBlock)"},{key:"1",title:"Continuar consulta",desc:"Menú de consultas",action:"choose('1 · Continuar consulta',routeConsult)"}]); setInput(false,"","Selecciona una opción para iniciar la simulación."); setTimeout(()=>addMsg("Hola, te damos la bienvenida a Banco Lima.\n\nSi necesitas bloquear de inmediato tu tarjeta o tus accesos, marca 0.\nPara cualquier otra consulta, marca 1.","bot","menu"),80)}
+function routeBlock(){setState({route:"block",node:"Bloqueo · identificación rápida",progress:16,expected:"blockDoc"}); setOptions([{key:"2",title:"Carné de extranjería",desc:"Ingresar CE",tone:"orange",action:"choose('2 · Carné de extranjería',blockAltDoc)"}]); setInput(true,"Ingresa DNI. Ej: 12345678","Bloqueo solo requiere documento. Si tienes CE u otro documento, selecciona 2."); addMsg("Vamos a proteger tu cuenta.\n\nIngresa tu número de DNI seguido de numeral.\nSi tienes carné de extranjería, marca 2.","bot","auth")}
+function blockAltDoc(){setState({node:"Bloqueo · CE u otro documento",progress:24,expected:"blockDoc"}); setOptions([{key:"2",title:"Mi CE tiene letras",desc:"Ingresar CE prioritaria",tone:"danger",action:"choose('2 · Mi CE tiene letras',blockSpecialist)"}]); setInput(true,"Ingresa Carné de Extranjería","Ingresa tu CE si es numérico. Si contiene letras, selecciona 2."); addMsg("Ingresa tu número de carné de extranjería seguido de numeral.\nSi tu carné tiene letras, marca 2 para atención especializada.","bot","auth")}
+function blockSpecialist(){setState({node:"Bloqueo · atención especializada",progress:34,expected:null}); setInput(false,"","Carné de extranjería derivado."); setOptions([{key:"↺",title:"Otra consulta",action:"choose('↺ · Volver al inicio',restart)"}]); addMsg("Enseguida te comunicamos con atención especializada para ayudarte con el bloqueo.","bot","help")}
+function processBlockDoc(v){v=v.replace("#","").trim(); if(!/^\d{6,12}$/.test(v)){addMsg("No pudimos leer el documento ingresado.\nPor seguridad, te comunicaremos con atención prioritaria para proteger tus productos.","bot","help"); setInput(false,"","Documento no leído."); return} let c=clients[v]||{name:"cliente"}; setState({dni:v,name:c.name,node:"Menú de bloqueo",progress:42,expected:null}); setInput(false,"","Selecciona qué deseas bloquear."); setOptions([{key:"1",title:"Bloquear todo",desc:"Tarjetas y accesos",tone:"danger",action:"choose('1 · Bloquear todo',()=>blockConfirm('todo'))"},{key:"2",title:"Tarjeta de crédito + accesos",tone:"danger",action:"choose('2 · TC + accesos',()=>blockConfirm('tc'))"},{key:"3",title:"Tarjeta de débito + accesos",tone:"danger",action:"choose('3 · TD + accesos',()=>blockConfirm('td'))"},{key:"4",title:"Solo accesos digitales",tone:"danger",action:"choose('4 · Solo accesos',()=>blockConfirm('access'))"}]); addMsg(`Perfecto, ${cap(c.name)}. Indícanos qué deseas bloquear.\n\nMarca 1 para bloquear todas tus tarjetas y accesos.\nMarca 2 para tu tarjeta de crédito y accesos.\nMarca 3 para tu tarjeta de débito y accesos.\nMarca 4 para solo tus accesos digitales.`,"bot","block")}
+
+function blockProducts(kind){
+  const products = {
+    todo: [
+      {label:"Visa Débito", tail:"4589", code:"BL-TD-948271"},
+      {label:"Visa Signature", tail:"1024", code:"BL-TC-736450"},
+      {label:"Accesos a canales digitales", tail:"", code:"BL-CD-581926"}
+    ],
+    tc: [
+      {label:"Visa Signature", tail:"1024", code:"BL-TC-736450"},
+      {label:"Accesos a canales digitales", tail:"", code:"BL-CD-581926"}
+    ],
+    td: [
+      {label:"Visa Débito", tail:"4589", code:"BL-TD-948271"},
+      {label:"Accesos a canales digitales", tail:"", code:"BL-CD-581926"}
+    ],
+    access: [
+      {label:"Accesos a canales digitales", tail:"", code:"BL-CD-581926"}
+    ]
+  };
+  return products[kind] || products.todo;
+}
+function blockSummary(kind){
+  const name = cap(ctx.name);
+  const intro = kind === "todo"
+    ? `Listo, ${name}. Estos son los códigos de bloqueo generados:`
+    : kind === "tc"
+      ? `Listo, ${name}. Estos son los códigos de bloqueo de tu tarjeta de crédito y accesos:`
+      : kind === "td"
+        ? `Listo, ${name}. Estos son los códigos de bloqueo de tu tarjeta de débito y accesos:`
+        : `Listo, ${name}. Este es el código de bloqueo de tus accesos digitales:`;
+  const lines = blockProducts(kind).map(p => {
+    const suffix = p.tail ? ` terminada en ${p.tail}` : "";
+    return `• ${p.label}${suffix}: código ${p.code}`;
+  }).join("\n");
+  return `${intro}\n\n${lines}\n\nGuarda estos códigos como constancia de la operación.\n\nMarca 1 para revisar movimientos recientes.\nMarca 2 para continuar con otra consulta.\nMarca 9 para hablar con un asesor.`;
+}
+
+function blockConfirm(k){
+  let m={
+    todo:"Estamos bloqueando todas tus tarjetas y accesos. Un momento.",
+    tc:"Estamos bloqueando tu tarjeta de crédito y tus accesos. Un momento.",
+    td:"Estamos bloqueando tu tarjeta de débito y tus accesos. Un momento.",
+    access:"Estamos bloqueando tus accesos digitales. Un momento."
+  }[k];
+  setState({node:"Bloqueo confirmado",progress:74});
+  addMsg(m,"bot","block");
+  setTimeout(()=>{
+    addMsg(blockSummary(k),"bot","block");
+    setOptions([
+      {key:"1",title:"Revisar movimientos",desc:"Continuar por WhatsApp",tone:"green",action:"choose('1 · Revisar movimientos',()=>waGeneric('Revisión de movimientos recientes'))"},
+      {key:"2",title:"Otra consulta",desc:"Ir al menú de consultas",action:"choose('2 · Otra consulta',menuConsultas)"},
+      {key:"9",title:"Hablar con asesor",tone:"orange",action:"choose('9 · Hablar con asesor',()=>agent('Te comunicamos con un asesor para acompañarte.'))"}
+    ]);
+    setState({progress:84})
+  },360)
+}
+function routeConsult(){setState({route:"consult",node:"Consultas · identificación",progress:16,expected:"consultDni",attempts:0}); setOptions([{key:"2",title:"Carné de extranjería",desc:"Ingresar CE",tone:"orange",action:"choose('2 · Carné de extranjería',consultAltDoc)"}]); setInput(true,"Ingresa DNI. Prueba: 12345678 o 87654321","Si el celular coincide, no pedirá fecha. Si no coincide, pedirá dato adicional."); addMsg("Antes de continuar, vamos a validar tu identidad.\n\nIngresa tu número de DNI seguido de numeral.\nSi tienes carné de extranjería, marca 2.","bot","auth")}
+
+function consultAltDoc(){
+  setState({route:"consult",node:"Consultas · Carné de Extranjería",progress:24,expected:"consultCe",attempts:0});
+  setOptions([{key:"2",title:"Mi CE tiene letras",desc:"Atención especializada",tone:"orange",action:"choose('2 · Mi CE tiene letras',consultSpecialist)"}]);
+  setInput(true,"Ingresa Carné de Extranjería","Ingresa tu CE si es numérico. Si contiene letras, selecciona 2.");
+  addMsg("Ingresa tu número de carné de extranjería seguido de numeral.\nSi tu carné tiene letras, marca 2 para recibir ayuda especializada.","bot","auth")
+}
+
+function consultSpecialist(){setState({node:"Consultas · CE / atención especializada",progress:28,expected:null}); setInput(false,"","Carné de extranjería derivado."); setOptions([{key:"↺",title:"Otra consulta",action:"choose('↺ · Volver al inicio',restart)"}]); addMsg("Gracias. Esta gestión continuará con una atención especializada para ayudarte con tu carné de extranjería.","bot","help")}
+function processConsultDni(v){v=v.replace("#","").trim(); if(v==="99999999"){addMsg("No pudimos validar el documento ingresado. Te comunicaremos con una atención de ayuda para acompañarte.","bot","help"); setInput(false,"","Documento no validado."); return} if(!/^\d{8}$/.test(v)){addMsg("No pudimos leer el DNI. Intenta nuevamente o marca 2 si tu documento es alfanumérico.","bot","auth"); return} let c=clients[v]||{name:"cliente",phone:"not",dob:"01011990"}; setState({dni:v,name:c.name,phone:c.phone}); if(c.phone==="recognized"){setState({node:"Consulta · número reconocido",progress:40,expected:null}); setInput(false,"","El celular coincide con el DNI. Continúa al menú."); addMsg(`Gracias, ${cap(c.name)}. Identificamos que llamas desde un número registrado y ya validamos tu identidad.\n\n¿En qué podemos ayudarte hoy?`,"bot","auth"); setTimeout(menuConsultas,420)} else {setState({node:"Consulta · validación adicional",progress:32,expected:"dob",attempts:0}); setOptions([]); setInput(true,"Fecha DDMMAAAA. Ej: 23071990","Como el celular no coincide, se solicita fecha de nacimiento."); addMsg("Ingresamos bien tu documento, pero necesitamos un dato adicional para continuar.\n\nIngresa tu fecha de nacimiento en formato día, mes y año.","bot","auth")}}
+
+function processConsultCe(v){
+  v=v.replace("#","").trim();
+  if(!/^\d{6,12}$/.test(v)){
+    addMsg("No pudimos leer el carné de extranjería ingresado. Si tu CE tiene letras, marca 2 para recibir ayuda especializada.","bot","auth");
+    return;
+  }
+  let c=clients[v]||{name:"cliente",phone:"not",dob:"01011990"};
+  setState({dni:v,name:c.name,phone:c.phone});
+  if(c.phone==="recognized"){
+    setState({node:"Consulta · CE reconocido",progress:40,expected:null});
+    setInput(false,"","El celular coincide con el CE. Continúa al menú.");
+    addMsg(`Gracias, ${cap(c.name)}. Identificamos que llamas desde un número registrado y ya validamos tu identidad.\n\n¿En qué podemos ayudarte hoy?`,"bot","auth");
+    setTimeout(menuConsultas,420)
+  } else {
+    setState({node:"Consulta · CE con validación adicional",progress:32,expected:"dob",attempts:0});
+    setOptions([]);
+    setInput(true,"Fecha DDMMAAAA. Ej: 14021992","Como el celular no coincide, se solicita fecha de nacimiento.");
+    addMsg("Ingresamos bien tu carné de extranjería, pero necesitamos un dato adicional para continuar.\n\nIngresa tu fecha de nacimiento en formato día, mes y año.","bot","auth")
+  }
+}
+
+function processDob(v){let exp=(clients[ctx.dni]||{}).dob||"01011990"; if(v.trim()===exp){setState({node:"Consulta · identidad validada",progress:42,expected:null}); setInput(false,"","Fecha validada."); addMsg(`Gracias, ${cap(ctx.name)}. Ya validamos tu identidad.\n\n¿En qué podemos ayudarte hoy?`,"bot","auth"); setTimeout(menuConsultas,420)} else {let a=(ctx.attempts||0)+1; setState({attempts:a}); if(a<3)addMsg(a===1?"No coincide. Intenta una vez más: día, mes y año.":"Último intento. Ingresa tu fecha de nacimiento.","bot","auth"); else {setState({expected:null,node:"Consulta · validación fallida"}); setInput(false,"","Validación no completada."); addMsg("No pudimos validar tus datos. Te comunicamos con un asesor para acompañarte.","bot","help")}}}
+function menuConsultas(){setState({node:"Menú de consultas",progress:52,expected:null}); setInput(false,"","Selecciona una opción de consulta."); setOptions([{key:"1",title:"Compras o movimientos no reconocidos",desc:"Reportar o revisar",tone:"orange",action:"choose('1 · Compras o movimientos no reconocidos',menuNoReconocidos)"},{key:"2",title:"App, claves y seguridad",action:"choose('2 · App, claves y seguridad',menuApp)"},{key:"3",title:"Consultas y gestiones de tarjeta",action:"choose('3 · Consultas de tarjeta',menuTarjeta)"},{key:"4",title:"Plin",action:"choose('4 · Plin',menuPlin)"},{key:"5",title:"Pedidos y reclamos",action:"choose('5 · Pedidos y reclamos',menuReclamos)"}]); addMsg("Para continuar con tu consulta:\n\nMarca 1 si ves compras o movimientos que no reconoces.\nMarca 2 para app, claves y seguridad.\nMarca 3 para consultas y gestiones de tu tarjeta.\nMarca 4 para Plin.\nMarca 5 para pedidos y reclamos.","bot","menu")}
+function menuNoReconocidos(){setState({node:"Compras o movimientos",progress:62}); setOptions([{key:"1",title:"Compra con tarjeta de crédito",tone:"orange",action:"choose('1 · Compra con TC',()=>askBlocked('crédito'))"},{key:"2",title:"Compra con tarjeta de débito",tone:"orange",action:"choose('2 · Compra con TD',()=>askBlocked('débito'))"},{key:"3",title:"Retiro o transferencia",tone:"orange",action:"choose('3 · Retiro o transferencia',otherMovement)"},{key:"4",title:"Revisar movimientos antes",tone:"green",action:"choose('4 · Revisar movimientos',()=>waGeneric('Revisión de movimientos recientes'))"},{key:"←",title:"Volver",action:"choose('← · Volver',menuConsultas)"}]); addMsg("Si ves compras o movimientos que no reconoces:\n\nMarca 1 si es una compra con tu tarjeta de crédito.\nMarca 2 si es una compra con tu tarjeta de débito.\nMarca 3 si es un retiro o una transferencia que no reconoces.\nMarca 4 si primero quieres revisar tus movimientos antes de reportar.","bot","menu")}
+function askBlocked(card){setOptions([{key:"1",title:"Sí, ya bloqueé",tone:"green",action:`choose('1 · Sí, ya bloqueé',()=>caseRegistered('${card}'))`},{key:"2",title:"No, bloquear primero",tone:"danger",action:"choose('2 · Bloquear primero',routeBlock)"},{key:"←",title:"Volver",action:"choose('← · Volver',menuNoReconocidos)"}]); addMsg(`Vamos a registrar tu caso por compra no reconocida en tarjeta de ${card}.\n\nSi ya bloqueaste tu tarjeta, marca 1.\nSi aún no la bloqueaste, marca 2.`,"bot","audio")}
+function caseRegistered(card){setOptions([{key:"2",title:"Volver al menú",action:"choose('2 · Volver al menú',menuConsultas)"},{key:"9",title:"Hablar con asesor",tone:"orange",action:"choose('9 · Hablar con asesor',()=>agent('Te comunicamos con un asesor para acompañarte.'))"}]); addMsg(`Tu caso por consumo no reconocido en tarjeta de ${card} quedó registrado.\n\nMarca 2 para volver al menú o marca 9 para hablar con un asesor.`,"bot","audio")}
+function otherMovement(){setOptions([{key:"1",title:"Bloquear accesos digitales",tone:"danger",action:"choose('1 · Bloquear accesos',()=>blockConfirm('access'))"},{key:"2",title:"Volver al menú",action:"choose('2 · Volver',menuConsultas)"},{key:"9",title:"Hablar con asesor",tone:"orange",action:"choose('9 · Asesor',()=>agent('Te comunicamos con un asesor para acompañarte.'))"}]); addMsg("Vamos a registrar ese retiro o transferencia que no reconoces.\n\nTu caso quedó registrado. Marca 1 para bloquear tus accesos digitales. Marca 2 para volver al menú. Marca 9 para hablar con un asesor.","bot","audio")}
+function menuApp(){setState({node:"App, claves y seguridad",progress:62}); setOptions([{key:"1",title:"No puedo ingresar",desc:"App o web",tone:"green",action:"choose('1 · No puedo ingresar',()=>waGeneric('Ayuda para ingresar a la app o web'))"},{key:"2",title:"Clave dinámica, SMS o validación",tone:"green",action:"choose('2 · Clave/SMS',()=>waGeneric('Clave dinámica, SMS o validación'))"},{key:"3",title:"Mensaje o enlace sospechoso",tone:"danger",action:"choose('3 · Enlace sospechoso',suspicious)"},{key:"4",title:"Operación digital",tone:"green",action:"choose('4 · Operación digital',()=>waGeneric('Ayuda con operación digital'))"},{key:"←",title:"Volver",action:"choose('← · Volver',menuConsultas)"}]); addMsg("Para app, claves y seguridad:\n\nMarca 1 si no puedes ingresar a la app o la web.\nMarca 2 para clave dinámica, SMS o validación.\nMarca 3 si recibiste un mensaje, llamada o enlace sospechoso.\nMarca 4 si necesitas ayuda con una operación digital.","bot","menu")}
+function suspicious(){setOptions([{key:"1",title:"Bloquear accesos ahora",tone:"danger",action:"choose('1 · Bloquear accesos',()=>blockConfirm('access'))"},{key:"2",title:"Ayuda adicional",tone:"orange",action:"choose('2 · Ayuda adicional',()=>agent('Te comunicamos con un asesor de seguridad para acompañarte.'))"},{key:"←",title:"Volver",action:"choose('← · Volver',menuApp)"}]); addMsg("Atención: si tocaste un enlace o compartiste información, actúa ahora.\n\nMarca 1 para bloquear tus accesos de inmediato.\nMarca 2 si necesitas ayuda adicional.","bot","block")}
+function menuTarjeta(){setState({node:"Consultas de tarjeta",progress:62}); setOptions([{key:"1",title:"Estado o gestión de tarjeta",action:"choose('1 · Estado o gestión',()=>waOrPhone('Gestión de tarjeta'))"},{key:"2",title:"Fecha o importe de pago",tone:"green",action:"choose('2 · Fecha o importe',()=>waGeneric('Fecha o importe de pago'))"},{key:"3",title:"Membresía, intereses o saldo",tone:"green",action:"choose('3 · Membresía/intereses',()=>waGeneric('Membresía, intereses o saldo a favor'))"},{key:"4",title:"Seguro asociado a tarjeta",tone:"green",action:"choose('4 · Seguro',()=>waGeneric('Seguro asociado a tarjeta'))"},{key:"←",title:"Volver",action:"choose('← · Volver',menuConsultas)"}]); addMsg("Para consultas y gestiones de tu tarjeta:\n\nMarca 1 para estado o gestión de tu tarjeta.\nMarca 2 para fecha o importe de pago.\nMarca 3 para membresía, intereses o saldo a favor.\nMarca 4 para seguro asociado a tu tarjeta.","bot","menu")}
+function menuPlin(){setState({node:"Plin",progress:62}); setOptions([{key:"1",title:"Confirmar o revisar Plin",tone:"green",action:"choose('1 · Confirmar Plin',()=>waGeneric('Confirmar o revisar Plin'))"},{key:"2",title:"No recibí o tuve problema",tone:"orange",action:"choose('2 · Problema con Plin',()=>agent('Vamos a ayudarte con ese Plin ahora mismo.'))"},{key:"3",title:"Revertir o constancia",tone:"orange",action:"choose('3 · Reversa/constancia',()=>agent('Te ayudamos con la reversa o la constancia de tu operación Plin.'))"},{key:"4",title:"Plin Metropolitano o WhatsApp",tone:"green",action:"choose('4 · Plin Metro/WhatsApp',()=>waGeneric('Plin Metropolitano o Plin por WhatsApp'))"},{key:"←",title:"Volver",action:"choose('← · Volver',menuConsultas)"}]); addMsg("Para consultas sobre Plin:\n\nMarca 1 para confirmar o revisar un Plin.\nMarca 2 si no recibiste un Plin o tuviste un problema al enviarlo.\nMarca 3 para revertir un Plin o revisar la constancia.\nMarca 4 para Plin Metropolitano o Plin por WhatsApp.","bot","menu")}
+function menuReclamos(){setState({node:"Pedidos y reclamos",progress:62}); setOptions([{key:"1",title:"Consultar estado",tone:"green",action:"choose('1 · Consultar estado',()=>waGeneric('Estado de pedido o reclamo'))"},{key:"2",title:"Registrar reclamo",tone:"orange",action:"choose('2 · Registrar reclamo',()=>agent('Vamos a ayudarte a registrar tu reclamo.'))"},{key:"3",title:"Ayuda con operación",tone:"orange",action:"choose('3 · Ayuda operación',()=>agent('Vamos a ayudarte con tu operación o solicitud.'))"},{key:"4",title:"Continuar por WhatsApp",tone:"green",action:"choose('4 · WhatsApp',()=>waGeneric('Continuidad de gestión'))"},{key:"←",title:"Volver",action:"choose('← · Volver',menuConsultas)"}]); addMsg("Para pedidos y reclamos:\n\nMarca 1 para consultar el estado de tu pedido o reclamo.\nMarca 2 para registrar un reclamo.\nMarca 3 si necesitas ayuda con una operación o solicitud.\nMarca 4 para continuar por WhatsApp.","bot","menu")}
+function waGeneric(topic){setState({node:"Continuidad por WhatsApp",progress:82}); setInput(false,"","Flujo puede continuar por WhatsApp sin repetir validación."); setOptions([{key:"1",title:"Enviar a WhatsApp",tone:"green",action:`choose('1 · Enviar a WhatsApp',()=>waSent('${topic}'))`},{key:"2",title:"Continuar por teléfono",tone:"orange",action:"choose('2 · Continuar por teléfono',()=>agent('Te comunicamos con un asesor para acompañarte.'))"},{key:"←",title:"Volver a consultas",action:"choose('← · Volver',menuConsultas)"}]); addMsg("Podemos continuar esta gestión por WhatsApp sin repetir tu validación.\n\nMarca 1 para recibir la continuidad ahora.\nMarca 2 para continuar por este medio.","bot","wa")}
+function waOrPhone(topic){setOptions([{key:"1",title:"WhatsApp",tone:"green",action:`choose('1 · WhatsApp',()=>waSent('${topic}'))`},{key:"2",title:"Teléfono",tone:"orange",action:"choose('2 · Teléfono',()=>agent('Te comunicamos con un asesor para acompañarte.'))"},{key:"←",title:"Volver",action:"choose('← · Volver',menuTarjeta)"}]); addMsg("Puedes continuar por WhatsApp o por teléfono.\n\nMarca 1 para WhatsApp.\nMarca 2 para seguir por teléfono.","bot","wa")}
+function waSent(topic){setState({node:"WhatsApp enviado",progress:100,expected:null}); setInput(false,"","Flujo completado."); setOptions([{key:"↺",title:"Nueva simulación",action:"choose('↺ · Nueva simulación',restart)"}]); addMsg(`Listo. Ya enviamos la continuidad a tu WhatsApp para: ${topic}.\nNo tendrás que volver a validar tu identidad.`,"bot","wa")}
+function agent(text){setState({node:"Atención asistida",progress:92,expected:null}); setInput(false,"","Derivación asistida."); setOptions([{key:"↺",title:"Nueva simulación",action:"choose('↺ · Nueva simulación',restart)"}]); addMsg(text,"bot","help")}
+function submitInput(){let v=$("textInput").value.trim(); if(!v)return; $("textInput").value=""; addMsg(v,"user"); if(ctx.expected==="blockDoc")processBlockDoc(v); else if(ctx.expected==="consultDni")processConsultDni(v); else if(ctx.expected==="consultCe")processConsultCe(v); else if(ctx.expected==="dob")processDob(v)}
+document.addEventListener("keydown",e=>{if(e.key==="Enter" && $("inputRow").style.display!=="none")submitInput()})
+function cleanSpeech(t){return String(t).replace(/\n/g," ").replace(/[←↺]/g,"").replace(/\s+/g," ").trim()}
+function natural(t){return cleanSpeech(t).replace(/seguido de numeral/g,"y luego presiona numeral").replace(/Marca 0/g,"Elige cero").replace(/Marca 1/g,"Elige uno").replace(/Marca 2/g,"Elige dos").replace(/Marca 3/g,"Elige tres").replace(/Marca 4/g,"Elige cuatro").replace(/Marca 5/g,"Elige cinco").replace(/Marca 9/g,"Elige nueve").replace(/DNI/g,"D N I").replace(/CE/g,"carné de extranjería").replace(/Un momento\./g,"Un momento, por favor.").replace(/BL-/g,"B L guion ")}
+function chunks(t){let parts=natural(t).replace(/([.!?])\s+/g,"$1|").split("|").map(x=>x.trim()).filter(Boolean);let out=[],cur="";for(let p of parts){if((cur+" "+p).length>170){if(cur)out.push(cur);cur=p}else cur=cur?cur+" "+p:p} if(cur)out.push(cur);return out}
+function score(v){let s=(v.name+" "+v.lang).toLowerCase(),n=0;if(/es[-_]?pe|per[uú]/.test(s))n+=100;if(/es[-_]?419|latam|latin|latino/.test(s))n+=82;if(/es[-_]?mx|méxico|mexico|es[-_]?co|es[-_]?cl|es[-_]?ar|es[-_]?us/.test(s))n+=56;if(/^es/i.test(v.lang))n+=35;if(/female|mujer|femenina|mónica|monica|paulina|maria|maría|sabina|sofia|sofía|lupe|paloma|laura|elvira|helena|isabel|dalia|camila|valentina|lucia|lucía/.test(s))n+=42;if(/premium|natural|google|microsoft|apple|neural|online/.test(s))n+=14;return n}
+function loadVoices(){if(!("speechSynthesis" in window))return;let voices=speechSynthesis.getVoices();let es=voices.filter(v=>/^es/i.test(v.lang)).sort((a,b)=>score(b)-score(a));let list=es.length?es:voices; $("voiceSelect").innerHTML=list.map((v,i)=>`<option value="${escapeAttr(v.name)}">${v.name} · ${v.lang}${i===0?" · recomendada":""}</option>`).join(""); if(list[0]&&!selectedVoiceName){selectedVoiceName=list[0].name;$("voiceSelect").value=selectedVoiceName}}
+function preferredVoice(){let all=speechSynthesis.getVoices();return all.find(v=>v.name===selectedVoiceName)||all.filter(v=>/^es/i.test(v.lang)).sort((a,b)=>score(b)-score(a))[0]||all[0]}
+function speak(text){if(!("speechSynthesis" in window))return;stopAudio();let c=chunks(text),v=preferredVoice(),i=0;function play(){if(i>=c.length)return;let u=new SpeechSynthesisUtterance(c[i]);u.lang=v?.lang||"es-PE";if(v)u.voice=v;u.rate=profile==="natural"?.86:.94;u.pitch=profile==="natural"?1.08:1;u.onend=()=>{i++;setTimeout(play,profile==="natural"?190:80)};speechSynthesis.speak(u)}play()}
+function stopAudio(){if("speechSynthesis" in window)speechSynthesis.cancel()}
+function toggleAuto(){autoAudio=!autoAudio;$("autoBtn").textContent=autoAudio?"Auto audio ON":"Auto audio OFF";$("autoBtn").classList.toggle("active",autoAudio)}
+function setProfile(p){profile=p;$("naturalBtn").classList.toggle("active",p==="natural");$("formalBtn").classList.toggle("active",p==="formal")}
+function quickCase(type){restart();setTimeout(()=>{if(type==="block"){choose("0 · Bloqueo inmediato",routeBlock);setTimeout(()=>{addMsg("12345678","user");processBlockDoc("12345678")},420)} if(type==="recognized"){choose("1 · Continuar consulta",routeConsult);setTimeout(()=>{addMsg("12345678","user");processConsultDni("12345678")},420)} if(type==="not"){choose("1 · Continuar consulta",routeConsult);setTimeout(()=>{addMsg("87654321","user");processConsultDni("87654321")},420)}},160)}
+if("speechSynthesis" in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}
+restart();
+</script>
+</body>
+</html>
