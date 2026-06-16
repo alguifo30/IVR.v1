@@ -8100,6 +8100,63 @@ function processDob(v){
   }
 }
 
+
+// ===== V37 · Menú seguro sin volver a consultas =====
+
+function menuSinAutenticacion(){
+  stopAudio();
+  pendingAfterAuth = null;
+  pendingAuthLabel = "";
+  setState({
+    node:"Menú seguro sin autenticación",
+    progress:46,
+    expected:null,
+    authenticated:false
+  });
+  setInput(false,"","Opciones sin datos personales ni nueva autenticación.");
+  setOptions([
+    {
+      key:"1",
+      title:"Bloqueo o seguridad",
+      desc:"Protección con asesor",
+      tone:"danger",
+      action:"choose('1 · Bloqueo o seguridad',menuSeguridadSinAuth)"
+    },
+    {
+      key:"2",
+      title:"App, claves o ingreso",
+      desc:"Guías sin datos personales",
+      tone:"green",
+      action:"choose('2 · App, claves o ingreso',menuAppSinAuth)"
+    },
+    {
+      key:"3",
+      title:"Información general",
+      desc:"Canales, productos y guías",
+      tone:"green",
+      action:"choose('3 · Información general',menuInfoGeneral)"
+    },
+    {
+      key:"4",
+      title:"Atención especializada",
+      desc:"Validación asistida",
+      tone:"orange",
+      action:"choose('4 · Atención especializada',()=>atencionEspecializada('No pudimos validar tu identidad por IVR.'))"
+    }
+  ]);
+
+  addMsg(`No pudimos validar tu identidad.
+
+Por seguridad, no mostraremos saldos, movimientos, constancias ni datos personales.
+
+Seleccione una opción:
+
+1. Bloqueo o seguridad.
+2. App, claves o ingreso.
+3. Información general.
+4. Atención especializada.`,"bot","help");
+}
+
 </script>
 </body>
 </html>
