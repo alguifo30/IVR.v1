@@ -8472,5 +8472,330 @@ No volveremos a pedirte tus datos.`,"bot","audio");
 })();
 </script>
 
+
+<script>
+// ===== V41 · WhatsApp con datos ficticios + códigos numéricos =====
+(function(){
+
+  window.blockProducts = function(kind){
+    const all = {
+      td:[{label:"Visa Débito",tail:"4589",code:"948271"}],
+      tc:[{label:"Visa Signature",tail:"1024",code:"736450"}],
+      access:[{label:"Accesos a canales digitales",tail:"",code:"581926"}]
+    };
+    if(kind === "tc") return [...all.tc, ...all.access];
+    if(kind === "td") return [...all.td, ...all.access];
+    if(kind === "access") return [...all.access];
+    return [...all.td, ...all.tc, ...all.access];
+  };
+
+  window.blockSummary = function(kind){
+    const email = maskedEmail();
+    const lines = blockProducts(kind).map(p => {
+      const suffix = p.tail ? ` terminada en ${p.tail}` : "";
+      return `• ${p.label}${suffix}: ${p.code}`;
+    }).join("\n");
+
+    return `Se realizó el bloqueo y los códigos son los siguientes:
+
+${lines}.
+
+La constancia se enviará al correo registrado: ${email}.
+
+Caso contrario, seleccione una opción:
+
+1. Envío de constancia por WhatsApp.
+2. Revisar movimientos.
+3. Volver al menú de consultas.
+4. Finalizar llamada.`;
+  };
+
+  window.waCard = function(tag, body, options){
+    return `<div class="waOptions">
+      <span class="waTag">${tag}</span><br>
+      ${body}<br><br>
+      <b>Elige una opción:</b><br><br>
+      ${options}
+    </div>`;
+  };
+
+  window.waPdfData = function(title, detail){
+    setState({node:"WhatsApp · PDF generado",progress:100});
+    setOptions([
+      {key:"1",title:"Descargar PDF",desc:"Documento generado",tone:"green",action:"choose('1 · Descargar PDF',()=>waDownloadOk())"},
+      {key:"2",title:"Volver al menú de consultas",desc:"Submenús",action:"choose('2 · Volver al menú de consultas',menuConsultas)"},
+      {key:"4",title:"Finalizar chat",desc:"Cerrar atención",action:"choose('4 · Finalizar chat',finalizarLlamada)"}
+    ]);
+    addMsg(waCard(title,
+      `✅ ${detail}<br><br>También lo enviaremos al correo registrado: <b>${maskedEmail()}</b>.`,
+      `1. Descargar PDF<br>2. Volver al menú de consultas<br>4. Finalizar chat`
+    ),"bot","wa");
+  };
+
+  window.waDownloadOk = function(){
+    setOptions([
+      {key:"1",title:"Volver al menú de consultas",desc:"Submenús",action:"choose('1 · Volver al menú de consultas',menuConsultas)"},
+      {key:"4",title:"Finalizar chat",desc:"Cerrar atención",action:"choose('4 · Finalizar chat',finalizarLlamada)"}
+    ]);
+    addMsg(waCard("Descarga lista",
+      `📄 El documento quedó disponible para descarga en WhatsApp.`,
+      `1. Volver al menú de consultas<br>4. Finalizar chat`
+    ),"bot","wa");
+  };
+
+  window.waBlockCodes = function(){
+    const codes = blockProducts("todo").map(p => {
+      const suffix = p.tail ? ` terminada en ${p.tail}` : "";
+      return `• ${p.label}${suffix}: <b>${p.code}</b>`;
+    }).join("<br>");
+
+    setOptions([
+      {key:"1",title:"Descargar constancia",desc:"PDF",tone:"green",action:"choose('1 · Descargar constancia',()=>waPdfData('Constancia de bloqueo','Se generó la constancia con los códigos de bloqueo.'))"},
+      {key:"2",title:"Revisar movimientos",desc:"Continuar",tone:"green",action:"choose('2 · Revisar movimientos',()=>waMovementsData('bloqueo'))"},
+      {key:"4",title:"Finalizar chat",desc:"Cerrar atención",action:"choose('4 · Finalizar chat',finalizarLlamada)"}
+    ]);
+
+    addMsg(waCard("Constancia de bloqueo",
+      `<b>Códigos generados ✅</b><br><br>${codes}`,
+      `1. Descargar constancia<br>2. Revisar movimientos recientes<br>4. Finalizar chat`
+    ),"bot","wa");
+  };
+
+  window.waEstadoCuentaData = function(months){
+    const label = months === 3 ? "últimos 3 meses" : "último estado de cuenta";
+    const detail = months === 3
+      ? `• Junio 2026 · Saldo final: S/ 2,450 · Documento 620626<br>
+         • Mayo 2026 · Saldo final: S/ 2,180 · Documento 620526<br>
+         • Abril 2026 · Saldo final: S/ 1,960 · Documento 620426`
+      : `• Periodo: Junio 2026<br>
+         • Cuenta: Ahorro Sueldo terminada en 4589<br>
+         • Saldo inicial: S/ 1,850<br>
+         • Depósitos: S/ 3,200<br>
+         • Consumos y retiros: S/ 2,600<br>
+         • Saldo final: S/ 2,450<br>
+         • Código de documento: 620418`;
+
+    setOptions([
+      {key:"1",title:"Descargar PDF",desc:"Estado de cuenta",tone:"green",action:`choose('1 · Descargar PDF',()=>waPdfData('Estado de cuenta','Se generó el ${label}.'))`},
+      {key:"2",title:"Enviar al correo",desc:maskedEmail(),tone:"green",action:"choose('2 · Enviar al correo',()=>waPdfData('Correo enviado','El estado de cuenta fue enviado al correo registrado.'))"},
+      {key:"9",title:"Volver a saldos",desc:"Menú anterior",action:"choose('9 · Volver a saldos',menuSaldos)"},
+      {key:"4",title:"Finalizar chat",desc:"Cerrar atención",action:"choose('4 · Finalizar chat',finalizarLlamada)"}
+    ]);
+
+    addMsg(waCard("Estado de cuenta",
+      `<b>Detalle solicitado:</b><br><br>${detail}`,
+      `1. Descargar PDF<br>2. Enviar al correo registrado<br>9. Volver a saldos<br>4. Finalizar chat`
+    ),"bot","wa");
+  };
+
+  window.waMovementsData = function(source){
+    const isPlin = String(source||"").toLowerCase().includes("plin");
+    const tag = isPlin ? "Movimientos Plin" : "Movimientos recientes";
+    const rows = isPlin
+      ? `• Plin enviado a María · S/ 35 · 11/06 · Código 884201<br>
+         • Plin recibido de Carlos · S/ 120 · 10/06 · Código 884202<br>
+         • Plin enviado a Farmacia Central · S/ 27 · 09/06 · Código 884203<br>
+         • Plin recibido de Rosa · S/ 75 · 08/06 · Código 884204`
+      : `• Compra con Visa Débito · S/ 48 · 11/06 · Código 773501<br>
+         • Pago de servicio · S/ 120 · 10/06 · Código 773502<br>
+         • Transferencia recibida · S/ 300 · 09/06 · Código 773503<br>
+         • Retiro ATM · S/ 200 · 08/06 · Código 773504<br>
+         • Compra online · S/ 67 · 07/06 · Código 773505`;
+
+    setOptions([
+      {key:"1",title:"Descargar PDF",desc:"Detalle de movimientos",tone:"green",action:`choose('1 · Descargar PDF',()=>waPdfData('${tag}','Se generó el detalle de movimientos.'))`},
+      {key:"2",title:"Reportar movimiento",desc:"No reconocido",tone:"danger",action:"choose('2 · Reportar movimiento',menuNoReconocidos)"},
+      {key:"9",title:"Volver a consultas",desc:"Menú de consultas",action:"choose('9 · Volver a consultas',menuConsultas)"},
+      {key:"4",title:"Finalizar chat",desc:"Cerrar atención",action:"choose('4 · Finalizar chat',finalizarLlamada)"}
+    ]);
+
+    addMsg(waCard(tag,
+      `<b>Información encontrada:</b><br><br>${rows}`,
+      `1. Descargar PDF<br>2. Reportar movimiento no reconocido<br>9. Volver a consultas<br>4. Finalizar chat`
+    ),"bot","wa");
+  };
+
+  window.waPlinData = function(type){
+    if(type === "issue"){
+      setOptions([
+        {key:"1",title:"Ver últimos 10 Plin",desc:"Validar operación",tone:"green",action:"choose('1 · Ver últimos 10 Plin',()=>waMovementsData('Plin'))"},
+        {key:"2",title:"Atención especializada",desc:"Revisar caso",tone:"orange",action:"choose('2 · Atención especializada',()=>atencionEspecializada('Revisaremos tu operación Plin.'))"},
+        {key:"9",title:"Volver a Plin",desc:"Menú anterior",action:"choose('9 · Volver a Plin',menuPlinOptimizado)"},
+        {key:"4",title:"Finalizar chat",desc:"Cerrar atención",action:"choose('4 · Finalizar chat',finalizarLlamada)"}
+      ]);
+      addMsg(waCard("Validación Plin",
+        `No encontramos una operación pendiente en este momento.<br><br>Revisa tus últimos movimientos Plin. Si el envío o recepción no aparece, podemos derivarte para revisión especializada.`,
+        `1. Ver últimos 10 movimientos de Plin<br>2. Atención especializada<br>9. Volver a Plin<br>4. Finalizar chat`
+      ),"bot","wa");
+      return;
+    }
+    if(type === "constancia"){
+      waPdfData("Constancia Plin","Se generó la constancia de la operación Plin visible en los últimos 10 movimientos.");
+      return;
+    }
+    waMovementsData("Plin");
+  };
+
+  window.waCanjesData = function(type){
+    if(type === "saldo"){
+      setOptions([
+        {key:"1",title:"Descargar detalle",desc:"PDF",tone:"green",action:"choose('1 · Descargar detalle',()=>waPdfData('Puntos y millas','Se generó el detalle de puntos, millas y vencimientos.'))"},
+        {key:"2",title:"Ver últimos canjes",desc:"Historial",tone:"green",action:"choose('2 · Ver últimos canjes',()=>waCanjesData('ultimos'))"},
+        {key:"9",title:"Volver a canjes",desc:"Menú anterior",action:"choose('9 · Volver a canjes',menuCanjes)"},
+        {key:"4",title:"Finalizar chat",desc:"Cerrar atención",action:"choose('4 · Finalizar chat',finalizarLlamada)"}
+      ]);
+      addMsg(waCard("Puntos y millas",
+        `<b>Resumen disponible:</b><br><br>
+        • Puntos disponibles: 18,450<br>
+        • Millas disponibles: 12,300<br>
+        • Próximo vencimiento: 2,000 puntos el 30/09<br>
+        • Equivalencia: Gift Card S/ 50 desde 10,000 puntos`,
+        `1. Descargar detalle<br>2. Ver últimos canjes<br>9. Volver a canjes<br>4. Finalizar chat`
+      ),"bot","wa");
+      return;
+    }
+    if(type === "constancia"){
+      waPdfData("Constancia de canje","Se generó la constancia del canje CJ58291.");
+      return;
+    }
+
+    setOptions([
+      {key:"1",title:"Descargar constancia",desc:"Canje seleccionado",tone:"green",action:"choose('1 · Descargar constancia',()=>waCanjesData('constancia'))"},
+      {key:"2",title:"Ver puntos o millas",desc:"Saldo",tone:"green",action:"choose('2 · Ver puntos o millas',()=>waCanjesData('saldo'))"},
+      {key:"9",title:"Volver a canjes",desc:"Menú anterior",action:"choose('9 · Volver a canjes',menuCanjes)"},
+      {key:"4",title:"Finalizar chat",desc:"Cerrar atención",action:"choose('4 · Finalizar chat',finalizarLlamada)"}
+    ]);
+
+    addMsg(waCard("Canjes",
+      `<b>Últimos canjes realizados:</b><br><br>
+      • Gift Card S/ 50 · 10,000 puntos · Código CJ58291<br>
+      • Millas para viaje · 5,000 millas · Código CJ58420<br>
+      • Descuento comercio aliado · 3,500 puntos · Código CJ58677`,
+      `1. Descargar constancia<br>2. Ver puntos o millas<br>9. Volver a canjes<br>4. Finalizar chat`
+    ),"bot","wa");
+  };
+
+  window.waGenericData = function(topic){
+    const safe = safeTopic(topic);
+    setOptions([
+      {key:"1",title:"Descargar PDF",desc:"Detalle solicitado",tone:"green",action:`choose('1 · Descargar PDF',()=>waPdfData('Detalle solicitado','Se generó el detalle de ${safe}.'))`},
+      {key:"9",title:"Volver a consultas",desc:"Menú de consultas",action:"choose('9 · Volver a consultas',menuConsultas)"},
+      {key:"4",title:"Finalizar chat",desc:"Cerrar atención",action:"choose('4 · Finalizar chat',finalizarLlamada)"}
+    ]);
+    addMsg(waCard("Banco Lima WhatsApp",
+      `<b>Información solicitada:</b><br><br>Consulta: ${waTopicLabel(safe)}.<br>Estado: información disponible para descarga.<br>Código de atención: 904612.`,
+      `1. Descargar PDF<br>9. Volver a consultas<br>4. Finalizar chat`
+    ),"bot","wa");
+  };
+
+  window.showWhatsAppOptionsWithBack = function(topic, backFn, backLabel){
+    const t = String(topic || "").toLowerCase();
+    const fn = backFn || window.lastBackFn || menuConsultas;
+    const label = backLabel || window.lastBackLabel || "consultas";
+    if(typeof setBackContext === "function") setBackContext(fn, label);
+
+    if(t.includes("estado de cuenta")){
+      setOptions([
+        {key:"1",title:"Ver último EECC",desc:"Datos y PDF",tone:"green",action:"choose('1 · Ver último EECC',()=>waEstadoCuentaData(1))"},
+        {key:"2",title:"Ver últimos 3 meses",desc:"Datos y PDF",tone:"green",action:"choose('2 · Ver últimos 3 meses',()=>waEstadoCuentaData(3))"},
+        {key:"9",title:`Volver a ${label}`,desc:"Menú anterior",action:`choose('9 · Volver a ${label}',${fn.name})`},
+        {key:"4",title:"Finalizar chat",desc:"Cerrar atención",action:"choose('4 · Finalizar chat',finalizarLlamada)"}
+      ]);
+      addMsg(waCard("Estado de cuenta",
+        `<b>Elige una opción:</b><br><br>
+        1. Ver último estado de cuenta<br><span style="color:#5f6b5f">Ejemplo: periodo, depósitos y saldo final.</span><br><br>
+        2. Ver últimos 3 meses<br><span style="color:#5f6b5f">Ejemplo: abril, mayo y junio.</span><br><br>
+        9. Volver a ${label}<br>4. Finalizar chat`,
+        ``
+      ),"bot","wa");
+      return;
+    }
+
+    if(t.includes("plin")){
+      setOptions([
+        {key:"1",title:"Ver últimos 10 movimientos de Plin",desc:"Detalle",tone:"green",action:"choose('1 · Ver últimos 10 movimientos de Plin',()=>waPlinData('movimientos'))"},
+        {key:"2",title:"Enviar constancia de Plin",desc:"PDF",tone:"green",action:"choose('2 · Enviar constancia de Plin',()=>waPlinData('constancia'))"},
+        {key:"3",title:"No visualizo envío o recepción",desc:"Validar operación",tone:"orange",action:"choose('3 · No visualizo envío o recepción',()=>waPlinData('issue'))"},
+        {key:"9",title:`Volver a ${label}`,desc:"Menú anterior",action:`choose('9 · Volver a ${label}',${fn.name})`},
+        {key:"4",title:"Finalizar chat",desc:"Cerrar atención",action:"choose('4 · Finalizar chat',finalizarLlamada)"}
+      ]);
+      addMsg(waCard("Plin",
+        `<b>Elige una opción:</b><br><br>
+        1. Ver últimos 10 movimientos de Plin<br><span style="color:#5f6b5f">Ejemplo: Plin enviado a María por S/ 35.</span><br><br>
+        2. Enviar constancia de Plin<br><span style="color:#5f6b5f">Ejemplo: operación visible en los últimos 10 movimientos.</span><br><br>
+        3. No visualizo envío o recepción de Plin<br><span style="color:#5f6b5f">Ejemplo: envié un Plin, pero no aparece.</span><br><br>
+        9. Volver a ${label}<br>4. Finalizar chat`,
+        ``
+      ),"bot","wa");
+      return;
+    }
+
+    if(t.includes("canje") || t.includes("puntos") || t.includes("millas")){
+      setOptions([
+        {key:"1",title:"Revisar puntos o millas",desc:"Saldo",tone:"green",action:"choose('1 · Revisar puntos o millas',()=>waCanjesData('saldo'))"},
+        {key:"2",title:"Ver últimos canjes",desc:"Historial",tone:"green",action:"choose('2 · Ver últimos canjes',()=>waCanjesData('ultimos'))"},
+        {key:"3",title:"Enviar constancia de canje",desc:"PDF",tone:"green",action:"choose('3 · Enviar constancia de canje',()=>waCanjesData('constancia'))"},
+        {key:"9",title:`Volver a ${label}`,desc:"Menú anterior",action:`choose('9 · Volver a ${label}',${fn.name})`},
+        {key:"4",title:"Finalizar chat",desc:"Cerrar atención",action:"choose('4 · Finalizar chat',finalizarLlamada)"}
+      ]);
+      addMsg(waCard("Canjes",
+        `<b>Elige una opción:</b><br><br>
+        1. Revisar puntos o millas<br><span style="color:#5f6b5f">Ejemplo: 18,450 puntos disponibles.</span><br><br>
+        2. Ver últimos canjes<br><span style="color:#5f6b5f">Ejemplo: Gift Card S/ 50 o millas usadas.</span><br><br>
+        3. Enviar constancia de canje<br><span style="color:#5f6b5f">Ejemplo: constancia del canje CJ58291.</span><br><br>
+        9. Volver a ${label}<br>4. Finalizar chat`,
+        ``
+      ),"bot","wa");
+      return;
+    }
+
+    if(t.includes("movimiento") || t.includes("saldo")){
+      setOptions([
+        {key:"1",title:"Ver movimientos",desc:"Detalle",tone:"green",action:"choose('1 · Ver movimientos',()=>waMovementsData('general'))"},
+        {key:"2",title:"Descargar PDF",desc:"Documento",tone:"green",action:`choose('2 · Descargar PDF',()=>waPdfData('Movimientos','Se generó el detalle solicitado.'))`},
+        {key:"9",title:`Volver a ${label}`,desc:"Menú anterior",action:`choose('9 · Volver a ${label}',${fn.name})`},
+        {key:"4",title:"Finalizar chat",desc:"Cerrar atención",action:"choose('4 · Finalizar chat',finalizarLlamada)"}
+      ]);
+      addMsg(waCard("Movimientos",
+        `<b>Elige una opción:</b><br><br>
+        1. Ver movimientos<br><span style="color:#5f6b5f">Ejemplo: compras, retiros y transferencias recientes.</span><br><br>
+        2. Descargar PDF<br><span style="color:#5f6b5f">Ejemplo: detalle de movimientos.</span><br><br>
+        9. Volver a ${label}<br>4. Finalizar chat`,
+        ``
+      ),"bot","wa");
+      return;
+    }
+
+    if(t.includes("bloqueo")){
+      setOptions([
+        {key:"1",title:"Ver códigos de bloqueo",desc:"Numéricos",tone:"green",action:"choose('1 · Ver códigos de bloqueo',waBlockCodes)"},
+        {key:"2",title:"Descargar constancia",desc:"PDF",tone:"green",action:`choose('2 · Descargar constancia',()=>waPdfData('Constancia de bloqueo','Se generó la constancia de bloqueo.'))`},
+        {key:"4",title:"Finalizar chat",desc:"Cerrar atención",action:"choose('4 · Finalizar chat',finalizarLlamada)"}
+      ]);
+      addMsg(waCard("Bloqueo",
+        `<b>Elige una opción:</b><br><br>
+        1. Ver códigos de bloqueo<br><span style="color:#5f6b5f">Ejemplo: Visa Débito 948271.</span><br><br>
+        2. Descargar constancia<br><span style="color:#5f6b5f">Ejemplo: constancia de bloqueo en PDF.</span><br><br>
+        4. Finalizar chat`,
+        ``
+      ),"bot","wa");
+      return;
+    }
+
+    waGenericData(topic);
+  };
+
+  // Lectura de códigos numéricos dígito por dígito: 948271 -> 9 4 8 2 7 1.
+  const oldCleanV41 = window.cleanSpeech;
+  window.cleanSpeech = function(t){
+    let s = oldCleanV41 ? oldCleanV41(t) : String(t);
+    return s.replace(/\b(\d{4,})\b/g, function(match){
+      return match.split("").join(" ");
+    });
+  };
+
+})();
+</script>
+
 </body>
 </html>
