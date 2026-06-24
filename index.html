@@ -8158,5 +8158,319 @@ Seleccione una opción:
 }
 
 </script>
+
+<script>
+// ===== V39 · Priorizar voz Microsoft Sabina en español =====
+(function(){
+  window.PREFERRED_VOICE_NAMES = [
+    "Microsoft Sabina",
+    "Microsoft Sabina Desktop",
+    "Sabina"
+  ];
+
+  window.pickPreferredSpanishVoice = function(){
+    const voices = speechSynthesis.getVoices ? speechSynthesis.getVoices() : [];
+    if(!voices || !voices.length) return null;
+
+    const bySabina = voices.find(v =>
+      window.PREFERRED_VOICE_NAMES.some(name =>
+        String(v.name || "").toLowerCase().includes(name.toLowerCase())
+      )
+    );
+    if(bySabina) return bySabina;
+
+    const byPeru = voices.find(v =>
+      String(v.lang || "").toLowerCase().startsWith("es-pe")
+    );
+    if(byPeru) return byPeru;
+
+    const byLatam = voices.find(v =>
+      ["es-mx","es-us","es-co","es-ar","es-cl","es-419"].some(code =>
+        String(v.lang || "").toLowerCase().startsWith(code)
+      )
+    );
+    if(byLatam) return byLatam;
+
+    const bySpanish = voices.find(v =>
+      String(v.lang || "").toLowerCase().startsWith("es")
+    );
+    return bySpanish || voices[0] || null;
+  };
+
+  window.applyPreferredVoiceToSelector = function(){
+    const sel = document.getElementById("voiceSel");
+    if(!sel || !speechSynthesis.getVoices) return;
+
+    const preferred = pickPreferredSpanishVoice();
+    if(!preferred) return;
+
+    const voices = speechSynthesis.getVoices();
+    const idx = voices.findIndex(v => v.name === preferred.name && v.lang === preferred.lang);
+    if(idx >= 0){
+      sel.value = String(idx);
+    }
+  };
+
+  const oldLoadVoices = window.loadVoices;
+  if(typeof oldLoadVoices === "function"){
+    window.loadVoices = function(){
+      oldLoadVoices();
+      setTimeout(applyPreferredVoiceToSelector, 50);
+    };
+  }
+
+  const oldSpeak = window.speak;
+  window.speak = function(text){
+    try{
+      stopAudio();
+      const u = new SpeechSynthesisUtterance(cleanSpeech(text));
+      const preferred = pickPreferredSpanishVoice();
+
+      if(preferred){
+        u.voice = preferred;
+        u.lang = preferred.lang || "es-PE";
+      }else{
+        u.lang = "es-PE";
+      }
+
+      u.rate = Number(document.getElementById("rate")?.value || 0.92);
+      u.pitch = 1;
+      u.volume = 1;
+      currentUtterance = u;
+      speechSynthesis.speak(u);
+    }catch(e){
+      if(typeof oldSpeak === "function") oldSpeak(text);
+    }
+  };
+
+  if("speechSynthesis" in window){
+    speechSynthesis.onvoiceschanged = function(){
+      if(typeof loadVoices === "function") loadVoices();
+      applyPreferredVoiceToSelector();
+    };
+    setTimeout(function(){
+      if(typeof loadVoices === "function") loadVoices();
+      applyPreferredVoiceToSelector();
+    }, 300);
+  }
+})();
+</script>
+
+
+<script>
+// ===== V40 · Audio en todas las derivaciones WhatsApp + encuesta IVR en consultas =====
+(function(){
+
+  window.isBlockFlow = function(){
+    const node = String((window.ctx && ctx.node) || "").toLowerCase();
+    const route = String((window.ctx && ctx.route) || "").toLowerCase();
+    return route === "block" || node.includes("bloqueo");
+  };
+
+  window.isConsultFlow = function(){
+    const route = String((window.ctx && ctx.route) || "").toLowerCase();
+    return route === "consult" && !isBlockFlow();
+  };
+
+  const oldMenuConsultasV40 = window.menuConsultas;
+  if(typeof oldMenuConsultasV40 === "function"){
+    window.menuConsultas = function(){
+      if(window.ctx){
+        ctx.route = "consult";
+        ctx.surveyEligible = true;
+      }
+      oldMenuConsultasV40();
+    };
+  }
+
+  const oldRouteConsultV40 = window.routeConsult;
+  if(typeof oldRouteConsultV40 === "function"){
+    window.routeConsult = function(){
+      if(window.ctx){
+        ctx.route = "consult";
+        ctx.surveyEligible = true;
+      }
+      oldRouteConsultV40();
+    };
+  }
+
+  const oldRouteBlockV40 = window.routeBlock;
+  if(typeof oldRouteBlockV40 === "function"){
+    window.routeBlock = function(){
+      if(window.ctx){
+        ctx.route = "block";
+        ctx.surveyEligible = false;
+      }
+      oldRouteBlockV40();
+    };
+  }
+
+  window.showIvrSurvey = function(){
+    stopAudio();
+    setState({node:"Encuesta IVR",progress:98,expected:null});
+    setInput(false,"","Encuesta rápida de atención IVR.");
+    setOptions([
+      {
+        key:"1",
+        title:"Muy buena",
+        desc:"Atención clara y rápida",
+        tone:"green",
+        action:"choose('1 · Muy buena',()=>submitIvrSurvey('Muy buena'))"
+      },
+      {
+        key:"2",
+        title:"Buena",
+        desc:"Atención adecuada",
+        tone:"green",
+        action:"choose('2 · Buena',()=>submitIvrSurvey('Buena'))"
+      },
+      {
+        key:"3",
+        title:"Regular",
+        desc:"Puede mejorar",
+        tone:"orange",
+        action:"choose('3 · Regular',()=>submitIvrSurvey('Regular'))"
+      },
+      {
+        key:"4",
+        title:"Mala",
+        desc:"No resolvió mi necesidad",
+        tone:"danger",
+        action:"choose('4 · Mala',()=>submitIvrSurvey('Mala'))"
+      }
+    ]);
+
+    addMsg(`Antes de finalizar, califica la atención del IVR.
+
+Seleccione una opción:
+
+1. Muy buena.
+2. Buena.
+3. Regular.
+4. Mala.`,"bot","audio");
+  };
+
+  window.submitIvrSurvey = function(score){
+    stopAudio();
+    if(window.ctx){
+      ctx.surveyScore = score;
+      ctx.surveyEligible = false;
+      ctx.surveyDone = true;
+    }
+
+    setState({node:"Encuesta registrada",progress:100,expected:null});
+    setInput(false,"","Encuesta registrada.");
+    setOptions([
+      {
+        key:"↺",
+        title:"Nueva simulación",
+        desc:"Reiniciar",
+        action:"choose('↺ · Nueva simulación',restart)"
+      }
+    ]);
+
+    addMsg(`Gracias. Registramos tu calificación: ${score}.
+
+Gracias por llamar a Banco Lima.`,"bot","menu");
+  };
+
+  window.finalizarLlamada = function(){
+    if(
+      window.ctx &&
+      ctx.surveyEligible === true &&
+      ctx.surveyDone !== true &&
+      isConsultFlow()
+    ){
+      showIvrSurvey();
+      return;
+    }
+
+    stopAudio();
+    setState({node:"Llamada finalizada",progress:100,expected:null});
+    setInput(false,"","Atención finalizada.");
+    setOptions([
+      {
+        key:"↺",
+        title:"Nueva simulación",
+        desc:"Reiniciar",
+        action:"choose('↺ · Nueva simulación',restart)"
+      }
+    ]);
+    addMsg(`Gracias por llamar a Banco Lima.`,"bot","menu");
+  };
+
+  window.openWhatsAppVisualDirect = function(topic, backFn, backLabel){
+    stopAudio();
+    const safe = safeTopic(topic);
+    const fn = backFn || window.lastBackFn || menuConsultas;
+    const label = backLabel || window.lastBackLabel || "consultas";
+
+    if(typeof setBackContext === "function") setBackContext(fn, label);
+
+    setState({node:"WhatsApp · continuidad digital",progress:96,expected:null});
+    setInput(false,"","WhatsApp abierto.");
+    addMsg(waHeaderHtml(safe),"bot","wa");
+
+    if(typeof showWhatsAppOptionsWithBack === "function"){
+      showWhatsAppOptionsWithBack(safe, fn, label);
+    }else if(typeof showWhatsAppOptions === "function"){
+      showWhatsAppOptions(safe);
+    }
+  };
+
+  window.derivarWhatsAppDirecto = function(topic, backFn, backLabel){
+    stopAudio();
+
+    const safe = safeTopic(topic);
+    const fn = backFn || window.lastBackFn || menuConsultas;
+    const label = backLabel || window.lastBackLabel || "consultas";
+
+    if(typeof setBackContext === "function") setBackContext(fn, label);
+
+    setState({node:"Derivación a WhatsApp",progress:90,expected:null});
+    setInput(false,"","Derivación a WhatsApp.");
+    setOptions([]);
+
+    addMsg(`Te estamos derivando a WhatsApp para continuar con ${waTopicLabel(safe)}.
+
+No volveremos a pedirte tus datos.`,"bot","audio");
+
+    setTimeout(function(){
+      openWhatsAppVisualDirect(safe, fn, label);
+    }, 2600);
+  };
+
+  window.transitionToWhatsApp = function(topic, backFn, backLabel){
+    derivarWhatsAppDirecto(topic, backFn || window.lastBackFn || menuConsultas, backLabel || window.lastBackLabel || "consultas");
+  };
+
+  window.whatsappSent = function(topic){
+    derivarWhatsAppDirecto(topic, window.lastBackFn || menuConsultas, window.lastBackLabel || "consultas");
+  };
+
+  window.waSent = function(topic){
+    derivarWhatsAppDirecto(topic, window.lastBackFn || menuConsultas, window.lastBackLabel || "consultas");
+  };
+
+  window.openWhatsAppChat = function(topic){
+    derivarWhatsAppDirecto(topic, window.lastBackFn || menuConsultas, window.lastBackLabel || "consultas");
+  };
+
+  window.openWhatsAppChatWithBack = function(topic, backFn, backLabel){
+    derivarWhatsAppDirecto(topic, backFn || menuConsultas, backLabel || "consultas");
+  };
+
+  window.opcionFinalizarKey4 = function(){
+    return {
+      key:"4",
+      title:"Finalizar llamada",
+      desc:"Encuesta IVR",
+      action:"choose('4 · Finalizar llamada',finalizarLlamada)"
+    };
+  };
+
+})();
+</script>
+
 </body>
 </html>
